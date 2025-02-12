@@ -19,7 +19,7 @@ load_dotenv()
 POCKETBASE_URL = "http://127.0.0.1:8090"
 WEBHOOK_VERIFY_TOKEN = "randomajastringnya"
 GOOGLE_CHAT_WEBHOOK = "https://chat.googleapis.com/v1/spaces/AAAAHVrlY1c/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=dgJqP-CKRJiVJm0Sf-4J2JDEdSrYPH29Lr7S0QGOCzs"
-GRAPH_API_TOKEN = "EAAQmDJB3E3gBO8ISRm06t2Djxc22AIHPYqaBGChuLc889pjFlGZCvLYPibTzXZATEAZABNF6jGSkTpJndFqALSMeOAsZChSxuCF8kaARTOQZCqDinUd3CzsZBmxUn1VB6Y7dgUSPfVBK3JOR2MZBt98ikcLqLQ6UkRlrdqO8QBvoHIs0IkeXUzNVGkOeMyRvHZBL1gZDZD"
+GRAPH_API_TOKEN = "EAAzcC4nKExUBO2AYT8RMhEtWTQ0uCadyHubvawOnXkEj81vPP9YZB4v1ZBEJ4m01q2pdSNvEIucjFHEURU6U48LVbvwChwreSNJSWm7duSR7ZByUSalIG1YRbOh0Mp9QhdNKZAteqMF17ZA5xV8hZCsIsIbdRAWINLeHT6tqXZA3fG3gEXMhgLGvX3ZAeV2XYqdkbhnERstWRroiluFITZCnm6NZB5t7YZD"
 
 app = FastAPI()
 pb = PocketBase(POCKETBASE_URL)
@@ -38,13 +38,14 @@ def main():
 #verification endpoint for webhook whatsapp (GET)
 @app.get("/webhook")
 def verify_webhook(
-    hub_mode: Optional[str] = None,
-    hub_verify_token: Optional[str] = None,
-    hub_challenge: Optional[str] = None  # Gunakan str agar tidak error parsing
+    # request: Request,
+    hub_mode: Optional[str] = Query(None, alias="hub.mode"), 
+    hub_challenge: Optional[str] = Query(None, alias="hub.challenge"),
+    hub_verify_token: Optional[str] = Query(None, alias="hub.verify_token")
 ):
     """Verifikasi Webhook WhatsApp API"""
     if hub_mode == "subscribe" and hub_verify_token == WEBHOOK_VERIFY_TOKEN:
-        return int(hub_challenge) if hub_challenge.isdigit() else hub_challenge
+        return hub_challenge if hub_challenge else "Missing challenge"
     raise HTTPException(status_code=403, detail="Verification failed")
 
 # Webhook event handler (POST)
