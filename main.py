@@ -35,18 +35,22 @@ class webhookPayload(BaseModel):
 def main():
     return {'message': 'This service is run'}
 
-#verification endpoint for webhook whatsapp (GET)
 @app.get("/webhook")
 def verify_webhook(
-    # request: Request,
-    hub_mode: Optional[str] = Query(None, alias="hub.mode"), 
+    hub_mode: Optional[str] = Query(None, alias="hub.mode"),
     hub_challenge: Optional[str] = Query(None, alias="hub.challenge"),
     hub_verify_token: Optional[str] = Query(None, alias="hub.verify_token")
 ):
-    """Verifikasi Webhook WhatsApp API"""
+    """Verifies the Webhook for WhatsApp API"""
+    
+    # Ensure all required parameters exist
+    if not hub_mode or not hub_verify_token:
+        raise HTTPException(status_code=403, detail="Missing required parameters")
+
     if hub_mode == "subscribe" and hub_verify_token == WEBHOOK_VERIFY_TOKEN:
         return hub_challenge if hub_challenge else "Missing challenge"
-    raise HTTPException(status_code=403, detail="Verification failed")
+
+    raise HTTPException(status_code=403, detail="Verification failed: Invalid token or mode")
 
 # Webhook event handler (POST)
 @app.post("/webhook")
