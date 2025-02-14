@@ -11,6 +11,7 @@ WEBHOOK_VERIFY_TOKEN = ""
 GOOGLE_CHAT_WEBHOOK = ""
 GRAPH_API_TOKEN = ""
 POCKETBASE_URL = ""
+PHONE_NUMBER_ID = "564629343400647"
 
 #instance server flask
 app = Flask(__name__)
@@ -71,6 +72,8 @@ def webhook_post():
         message_type = message_data.get("type")
         message_text = message_data.get("text", {}).get("body", "")
 
+        sendReplyMsg(from_user, "Terima kasih, pesan Anda sedang diproses.", "")
+
         #save message to pocketbase
         save_msg_to_pocketbase(from_user, message_type, message_text)
 
@@ -108,6 +111,78 @@ def send_to_google_chat(message: str):
         print("Message sent to Google Chat")
     else:
         print(f"Failed to send message: {response.text}")
+
+#download media from whatsapp
+def download_media(media_id: str, filename: str):
+    url = f"https://graph.facebook.com/v21.0/{media_id}/"
+    headers = {"Authorization": f"Bearer {GRAPH_API_TOKEN}"}
+
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        print(f"Error fetching media data: {response.text}")
+        return None
+
+    media_data = response.json()
+    media_url = media_data.get("url")
+
+    if not media_url:
+        print("No media URL found")
+        return None
+
+    media_response = requests.get(media_url, headers=headers)
+    if media_response.status_code == 200:
+        with open(filename, "wb") as file:
+            file.write(media_response.content)
+        print(f"File downloaded: {filename}")
+        return filename
+    else:
+        print(f"Failed to download file: {media_response.text}")
+        return None
+
+#reply msg to sender whatsapp
+def sendReplyMsg(recipient, msgText, replyMsgID):
+    url = f"https://graph.facebook.com/v21.0/{PHONE_NUMBER_ID}/messages"
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": recipient,
+        "text": {"body": msgText},
+        "context": {"message_id": replyMsgID}
+    }
+
+    headers = {
+        "Authorization": f"Bearer {GRAPH_API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+
+    if response.status_code == 200:
+        print("Reply message successfully")
+    else:
+        print("Failed to reply message: {response.text}")
+
+#mark the message as read
+def markAsRead(msgID):
+    url = f"https://graph.facebook.com/v21.0/{PHONE_NUMBER_ID}/messages"
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "status": "read",
+        "message_id": msgID
+    }
+
+    headers = {
+        "Authorization": f"Bearer {GRAPH_API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+
+    if response.status_code == 200:
+        print("Reply message successfully")
+    else:
+        print("Failed to reply message: {response.text}")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3004, debug=True)
