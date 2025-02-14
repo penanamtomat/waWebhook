@@ -1,8 +1,7 @@
 # waWebhook
 
-requirement:
-fastapi
-uvicorn
+requirement for app.py:
+flask
 requests
 python-dotnenv
 pocketbase
